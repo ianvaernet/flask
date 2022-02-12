@@ -1,0 +1,2023 @@
+openapi: 3.0.0
+info:
+  title: Genies NFT Administration
+  description: Genies NFT Administration Subsystem API
+  contact:
+    email: wenceslao@42mate.com
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  version: 1.0.0
+externalDocs:
+  description: Find out more about Swagger
+  url: http://swagger.io
+servers:
+- url: https://cms-nft-subsystem/v1
+- url: http://cms-nft-subsystem/v1
+paths:
+  /auth:
+    post:
+      tags:
+      - authorization
+      summary: Authenticate to the genies cms backend
+      operationId: authenticate
+      requestBody:
+        description: Creadentials
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Auth'
+        required: true
+      responses:
+        "200":
+          description: Log in successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200'
+        "400":
+          description: Bad Request
+        "401":
+          description: Unauthorized
+      x-openapi-router-controller: swagger_server.controllers.authorization_controller
+  /series:
+    get:
+      tags:
+      - series
+      summary: Get the list of series
+      description: Get the list of all series with support for filtering by status
+        and searching by name or short_word
+      operationId: list_series
+      parameters:
+      - name: status
+        in: query
+        description: A comma separated list of status to filter by
+        required: false
+        style: form
+        explode: false
+        schema:
+          type: array
+          items:
+            $ref: '#/components/schemas/SerieStatus'
+      - name: keyword
+        in: query
+        description: Search by name or short_word
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: page
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+      - name: page_size
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+      - name: order
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: order_by
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: The list of Series
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_1'
+        "401":
+          description: Unauthorized
+      security:
+      - Bearer: []
+      - ApiToken: []
+      x-openapi-router-controller: swagger_server.controllers.series_controller
+    post:
+      tags:
+      - series
+      summary: Create a new series
+      description: Create a new draft serie inside the genies cms nft subsystem
+      operationId: create_serie
+      requestBody:
+        description: The series object to be created
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSerie'
+        required: true
+      responses:
+        "201":
+          description: Serie successfully created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_201'
+        "401":
+          description: Unauthorized
+        "409":
+          description: A Serie with the same name or short_word already exists
+      security:
+      - Bearer: []
+      - ApiToken: []
+      x-openapi-router-controller: swagger_server.controllers.series_controller
+  /series/{id}:
+    get:
+      tags:
+      - series
+      summary: Get a serie
+      description: Get a serie data based on its ID
+      operationId: get_serie
+      parameters:
+      - name: id
+        in: path
+        description: The serie id
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: integer
+      - name: format
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+      responses:
+        "200":
+          description: The requested Serie
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_201'
+        "401":
+          description: Unauthorized
+        "404":
+          description: Serie not found
+      security:
+      - Bearer: []
+      - ApiToken: []
+      x-openapi-router-controller: swagger_server.controllers.series_controller
+    put:
+      tags:
+      - series
+      summary: Update a serie
+      description: "Update a serie data, if it's a draft all data is updatable, but\
+        \ if it's published only off_chain_metadata can be updated"
+      operationId: update_serie
+      parameters:
+      - name: id
+        in: path
+        description: The serie id
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: integer
+      requestBody:
+        description: The serie object to be updated
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateSerie'
+        required: true
+      responses:
+        "200":
+          description: Serie successfully updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_201'
+        "401":
+          description: Unauthorized
+        "404":
+          description: Serie not found
+        "409":
+          description: Another Serie with the same name or short_word already exists
+      security:
+      - Bearer: []
+      - ApiToken: []
+      x-openapi-router-controller: swagger_server.controllers.series_controller
+    delete:
+      tags:
+      - series
+      summary: Delete a series
+      description: Delete draft series
+      operationId: delete_serie
+      parameters:
+      - name: id
+        in: path
+        description: The serie id
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: integer
+      responses:
+        "200":
+          description: Serie successfully deleted
+        "401":
+          description: Unauthorized
+        "403":
+          description: The Serie cannot be deleted because it has already been published
+        "404":
+          description: Serie not found
+        "409":
+          description: The Serie cannot be deleted because it has Collections dependent
+            on it
+      security:
+      - Bearer: []
+      - ApiToken: []
+      x-openapi-router-controller: swagger_server.controllers.series_controller
+  /series/{id}/publish:
+    post:
+      tags:
+      - series
+      summary: Publish a serie
+      description: Publish a serie
+      operationId: publish_serie
+      parameters:
+      - name: id
+        in: path
+        description: The serie id to be published
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: integer
+      responses:
+        "200":
+          description: The serie have been published
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_2'
+        "401":
+          description: Unauthorized
+        "404":
+          description: Serie not found
+      security:
+      - Bearer: []
+      - ApiToken: []
+      x-openapi-router-controller: swagger_server.controllers.series_controller
+  /collections:
+    get:
+      tags:
+      - collections
+      summary: Get the list of collections
+      description: Get the list of all collections with support for filtering by status
+        or serie_id and searching by name or short_word
+      operationId: list_collections
+      parameters:
+      - name: status
+        in: query
+        description: A comma separated list of status to filter by
+        required: false
+        style: form
+        explode: false
+        schema:
+          type: array
+          items:
+            $ref: '#/components/schemas/CollectionStatus'
+      - name: serie_id
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+      - name: order
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: order_by
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: keyword
+        in: query
+        description: Search by name or short_word
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: page
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+      - name: page_size
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+      responses:
+        "200":
+          description: The list of Collections
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_3'
+        "401":
+          description: Unauthorized
+      security:
+      - Bearer: []
+      - ApiToken: []
+      x-openapi-router-controller: swagger_server.controllers.collections_controller
+    post:
+      tags:
+      - collections
+      summary: Create a new collection
+      description: Create a new draft collection inside the genies cms nft subsystem
+      operationId: create_collection
+      requestBody:
+        description: The collection object to be created
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCollection'
+        required: true
+      responses:
+        "201":
+          description: Collection successfully created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_201_1'
+        "400":
+          description: Invalid serieId
+        "401":
+          description: Unauthorized
+        "409":
+          description: A Collection with the same name or short_word already exists
+      security:
+      - Bearer: []
+      - ApiToken: []
+      x-openapi-router-controller: swagger_server.controllers.collections_controller
+  /collections/{id}:
+    get:
+      tags:
+      - collections
+      summary: Get a collection
+      description: Get a collection data based on its ID
+      operationId: get_collection
+      parameters:
+      - name: id
+        in: path
+        description: The Collection id
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: integer
+      - name: format
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+      responses:
+        "200":
+          description: The requested Collection
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_201_1'
+        "401":
+          description: Unauthorized
+        "404":
+          description: Collection not found
+      security:
+      - Bearer: []
+      - ApiToken: []
+      x-openapi-router-controller: swagger_server.controllers.collections_controller
+    put:
+      tags:
+      - collections
+      summary: Update a collection
+      description: "Update a collection data, if it's a draft all data is updatable,\
+        \ but if it's published only off_chain_metadata can be updated"
+      operationId: update_collection
+      parameters:
+      - name: id
+        in: path
+        description: The id of the collection to update
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: integer
+      requestBody:
+        description: The collection object to be updated
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCollection'
+        required: true
+      responses:
+        "200":
+          description: Collection successfully updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_201_1'
+        "400":
+          description: Invalid serieId
+        "401":
+          description: Unauthorized
+        "404":
+          description: Collection not found
+        "409":
+          description: A Collection with the same name or short_word already exists
+      security:
+      - Bearer: []
+      - ApiToken: []
+      x-openapi-router-controller: swagger_server.controllers.collections_controller
+    delete:
+      tags:
+      - collections
+      summary: Delete a collection
+      description: Delete draft collection
+      operationId: delete_collection
+      parameters:
+      - name: id
+        in: path
+        description: The collection id
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: integer
+      responses:
+        "200":
+          description: Collection successfully deleted
+        "401":
+          description: Unauthorized
+        "403":
+          description: The Collection cannot be deleted because it has already been
+            published
+        "404":
+          description: Collection not found
+        "409":
+          description: The Collection cannot be deleted because it has Editions dependent
+            on it
+      security:
+      - Bearer: []
+      - ApiToken: []
+      x-openapi-router-controller: swagger_server.controllers.collections_controller
+  /collections/{id}/publish:
+    post:
+      tags:
+      - collections
+      summary: Publish a collection
+      description: Publish a collection
+      operationId: publish_collection
+      parameters:
+      - name: id
+        in: path
+        description: The collection id to be published
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: integer
+      responses:
+        "200":
+          description: The collection have been published
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_2'
+        "401":
+          description: Unauthorized
+        "404":
+          description: No Collection found
+      security:
+      - Bearer: []
+      - ApiToken: []
+      x-openapi-router-controller: swagger_server.controllers.collections_controller
+  /editions:
+    get:
+      tags:
+      - editions
+      summary: Get the list of Editions
+      description: "Get the list of all Editions with support for filtering by status,\
+        \ availability, rarity, type, design_slot, min_price, max_price or avatar_wearable_id\
+        \ and searching by name, artist, celebrity, publisher, trademark or avatar_wearable_sku"
+      operationId: list_editions
+      parameters:
+      - name: status
+        in: query
+        description: A comma separated list of status to filter by
+        required: false
+        style: form
+        explode: false
+        schema:
+          type: array
+          items:
+            $ref: '#/components/schemas/EditionStatus'
+      - name: available
+        in: query
+        description: An edition is available if it’s not related to any drop
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+      - name: rarity
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: type
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: design_slot
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: min_price
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: number
+          format: double
+      - name: max_price
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: number
+          format: double
+      - name: avatar_wearable_id
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+      - name: keyword
+        in: query
+        description: "Search by name, artist, celebrity, publisher, trademark or avatar_wearable_sku"
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: order
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: order_by
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: page
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+      - name: page_size
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+      - name: format
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+      responses:
+        "200":
+          description: The list of Editions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_4'
+        "401":
+          description: Unauthorized
+      security:
+      - Bearer: []
+      - ApiToken: []
+      x-openapi-router-controller: swagger_server.controllers.editions_controller
+    post:
+      tags:
+      - editions
+      summary: Create a new Edition
+      description: Create a new Edition in draft state.
+      operationId: create_edition
+      requestBody:
+        description: Edition object
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateEdition'
+        required: true
+      responses:
+        "201":
+          description: Edition succesfully created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_201_2'
+        "400":
+          description: Invalid collectionId
+        "401":
+          description: Unauthorized
+        "409":
+          description: An Edition with the same name already exists
+      security:
+      - Bearer: []
+      - ApiToken: []
+      x-openapi-router-controller: swagger_server.controllers.editions_controller
+  /editions/{id}:
+    get:
+      tags:
+      - editions
+      summary: Get the data of an specific edition
+      description: Get all the details from an specific edition
+      operationId: get_edition
+      parameters:
+      - name: id
+        in: path
+        description: The edition id
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: integer
+          format: int64
+      - name: format
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+      responses:
+        "200":
+          description: The requested Edition
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_201_2'
+        "401":
+          description: Unauthorized
+        "404":
+          description: Edition Not Found
+      security:
+      - Bearer: []
+      - ApiToken: []
+      x-openapi-router-controller: swagger_server.controllers.editions_controller
+    put:
+      tags:
+      - editions
+      summary: Update an Edition
+      description: Create a new Edition in draft state.
+      operationId: update_edition
+      parameters:
+      - name: id
+        in: path
+        description: The edition id
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        description: Edition object
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateEdition'
+        required: true
+      responses:
+        "200":
+          description: Edition successfully updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_201_2'
+        "400":
+          description: Invalid collection_id
+        "401":
+          description: Unauthorized
+        "404":
+          description: Edition not found
+        "409":
+          description: An Edition with the same name already exists
+      security:
+      - Bearer: []
+      - ApiToken: []
+      x-openapi-router-controller: swagger_server.controllers.editions_controller
+    delete:
+      tags:
+      - editions
+      summary: Delete an Edition
+      description: Delete draft Edition
+      operationId: delete_edition
+      parameters:
+      - name: id
+        in: path
+        description: The edition id
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: integer
+      responses:
+        "200":
+          description: Edition successfully deleted
+        "401":
+          description: Unauthorized
+        "403":
+          description: The Edition cannot be deleted because it has already been published
+        "404":
+          description: Edition not found
+      security:
+      - Bearer: []
+      - ApiToken: []
+      x-openapi-router-controller: swagger_server.controllers.editions_controller
+  /editions/batch_update:
+    put:
+      tags:
+      - editions
+      summary: Update Editions by avatar_wearable_id
+      description: Update the collection_id and asset short_word of all the Editions
+        with that avatar_wearable_id.
+      operationId: batch_update_editions
+      requestBody:
+        description: avatar_wearable_id and updated fields (collection_id and short_word)
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BatchUpdateEditions'
+        required: true
+      responses:
+        "200":
+          description: Editions successfully updated
+        "401":
+          description: Unauthorized
+        "403":
+          description: There are Editions with that avatar_wearable_id that have already
+            been published
+        "404":
+          description: There is no Collection with that collection_id
+      security:
+      - Bearer: []
+      - ApiToken: []
+      x-openapi-router-controller: swagger_server.controllers.editions_controller
+  /editions/{id}/publish:
+    post:
+      tags:
+      - editions
+      summary: Publish an edition to the Dapper system
+      description: "Publish an edition to the Dapper system, this will block the on\
+        \ chain metadata."
+      operationId: publish_edition
+      parameters:
+      - name: id
+        in: path
+        description: The edition id to be published
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: integer
+      responses:
+        "200":
+          description: Nft published
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_2'
+        "400":
+          description: Bad Request
+        "401":
+          description: Unauthorized
+      security:
+      - Bearer: []
+      - ApiToken: []
+      x-openapi-router-controller: swagger_server.controllers.editions_controller
+  /editions/{id}/mint:
+    post:
+      tags:
+      - editions
+      summary: Mint an NFT
+      description: Mint an specific amount of one edition based on it's id
+      operationId: mint_nft
+      parameters:
+      - name: id
+        in: path
+        description: The edition id
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        description: The quantity of edition structures to be minted
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Mint'
+        required: true
+      responses:
+        "200":
+          description: Minted NFT
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_2'
+        "400":
+          description: Bad Request
+        "401":
+          description: Unauthorized
+      security:
+      - Bearer: []
+      - ApiToken: []
+      x-openapi-router-controller: swagger_server.controllers.editions_controller
+  /editions/{id}/errors:
+    get:
+      tags:
+      - editions
+      summary: List the errors of an specific edition
+      description: List all the errors of an specific edition
+      operationId: list_edition_errors
+      parameters:
+      - name: id
+        in: path
+        description: The edition id
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: integer
+          format: int64
+      - name: page
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+      - name: page_size
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+      responses:
+        "200":
+          description: The requested Edition's errors
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_5'
+        "401":
+          description: Unauthorized
+        "404":
+          description: Edition Not Found
+      security:
+      - Bearer: []
+      - ApiToken: []
+      x-openapi-router-controller: swagger_server.controllers.editions_controller
+  /drops:
+    get:
+      tags:
+      - drops
+      summary: Get the list of drops
+      description: Get the list of all drops with support for filtering by status
+        and searching by title
+      operationId: list_drops
+      parameters:
+      - name: status
+        in: query
+        description: A comma separated list of status to filter by
+        required: false
+        style: form
+        explode: false
+        schema:
+          type: array
+          items:
+            $ref: '#/components/schemas/DropStatus'
+      - name: keyword
+        in: query
+        description: Search by title
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: order
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: order_by
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: page
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+      - name: page_size
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+      responses:
+        "200":
+          description: The list of drops
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_6'
+        "401":
+          description: Unauthorized
+      security:
+      - Bearer: []
+      - ApiToken: []
+      x-openapi-router-controller: swagger_server.controllers.drops_controller
+    post:
+      tags:
+      - drops
+      summary: Create a new drop
+      description: Create a new draft drop inside the genies cms nft subsystem
+      operationId: create_drop
+      requestBody:
+        description: The drop object to be created
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDrop'
+        required: true
+      responses:
+        "201":
+          description: The drop has been created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_201_3'
+      security:
+      - Bearer: []
+      - ApiToken: []
+      x-openapi-router-controller: swagger_server.controllers.drops_controller
+  /drops/{id}:
+    get:
+      tags:
+      - drops
+      summary: Get a drop
+      description: Get a drop data based on its ID
+      operationId: get_drop
+      parameters:
+      - name: id
+        in: path
+        description: The drop id
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: integer
+      - name: format
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+      responses:
+        "200":
+          description: The drop Object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_201_3'
+        "401":
+          description: Unauthorized
+        "404":
+          description: Drop not found
+      security:
+      - Bearer: []
+      - ApiToken: []
+      x-openapi-router-controller: swagger_server.controllers.drops_controller
+    put:
+      tags:
+      - drops
+      summary: Update a drop
+      description: "Update a drop data, if it's a draft all data is updatable"
+      operationId: update_drop
+      parameters:
+      - name: id
+        in: path
+        description: The drop id
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: integer
+      requestBody:
+        description: The drop object to be updated
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateDrop'
+        required: true
+      responses:
+        "200":
+          description: The Drop has been updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_201_3'
+        "400":
+          description: Bad Request
+        "401":
+          description: Unauthorized
+        "403":
+          description: Drop already on sale or finished
+        "404":
+          description: Drop or Edition not found
+      security:
+      - Bearer: []
+      - ApiToken: []
+      x-openapi-router-controller: swagger_server.controllers.drops_controller
+    delete:
+      tags:
+      - drops
+      summary: Delete a drop
+      description: Delete draft drop
+      operationId: delete_drop
+      parameters:
+      - name: id
+        in: path
+        description: The drop id
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: integer
+      responses:
+        "200":
+          description: The Drop has been deleted
+        "401":
+          description: Unauthorized
+        "403":
+          description: Drop already published
+        "404":
+          description: Drop not found
+      security:
+      - Bearer: []
+      - ApiToken: []
+      x-openapi-router-controller: swagger_server.controllers.drops_controller
+  /drops/{id}/publish:
+    post:
+      tags:
+      - drops
+      summary: Publish a drop
+      description: Publish a drop
+      operationId: publish_drop
+      parameters:
+      - name: id
+        in: path
+        description: The drop id to be published
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: integer
+      responses:
+        "200":
+          description: The drop has been published
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_2'
+        "401":
+          description: Unauthorized
+        "404":
+          description: No Drop found
+      security:
+      - Bearer: []
+      - ApiToken: []
+      x-openapi-router-controller: swagger_server.controllers.drops_controller
+  /nfts:
+    get:
+      tags:
+      - nfts
+      summary: Get the list of Nfts
+      description: "Get the list of all Nfts with support for filtering by reservation,\
+        \ status, rarity, serie_id or collection_id and searching by serial_number,\
+        \ Edition's name, Collection's name or short_word, Serie's name or short_word"
+      operationId: list_nfts
+      parameters:
+      - name: reserved
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+      - name: status
+        in: query
+        description: A comma separated list of status to filter by
+        required: false
+        style: form
+        explode: false
+        schema:
+          type: array
+          items:
+            $ref: '#/components/schemas/NftStatus'
+      - name: rarity
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: serie_id
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+      - name: collection_id
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+      - name: keyword
+        in: query
+        description: "Search by serial_number, Edition's name, Collection's name and\
+          \ short_word, and Serie's name and short_word"
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: page
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+      - name: page_size
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+      responses:
+        "200":
+          description: The list of Nfts
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_7'
+        "401":
+          description: Unauthorized
+      security:
+      - Bearer: []
+      - ApiToken: []
+      x-openapi-router-controller: swagger_server.controllers.nfts_controller
+  /enumerations:
+    get:
+      tags:
+      - enumerations
+      summary: Get the list of all dapper enumerations
+      description: Get the list of all dapper enumerations
+      operationId: list_enumerations
+      responses:
+        "200":
+          description: The list of Enumerations
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_8'
+        "401":
+          description: Unauthorized
+      security:
+      - Bearer: []
+      - ApiToken: []
+      x-openapi-router-controller: swagger_server.controllers.enumerations_controller
+  /enumerations/edition-rarity:
+    get:
+      tags:
+      - enumerations
+      summary: Get the list of all dapper edition rarity enumerations
+      description: Get the list of all dapper edition rarity enumerations
+      operationId: list_edition_rarity_enumerations
+      responses:
+        "200":
+          description: The list of Edition Rarity Enumerations
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_9'
+        "401":
+          description: Unauthorized
+      security:
+      - Bearer: []
+      - ApiToken: []
+      x-openapi-router-controller: swagger_server.controllers.enumerations_controller
+  /enumerations/edition-types:
+    get:
+      tags:
+      - enumerations
+      summary: Get the list of all dapper edition types enumerations
+      description: Get the list of all dapper edition types enumerations
+      operationId: list_edition_type_enumerations
+      responses:
+        "200":
+          description: The list of Edition Types Enumerations
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_10'
+        "401":
+          description: Unauthorized
+      security:
+      - Bearer: []
+      - ApiToken: []
+      x-openapi-router-controller: swagger_server.controllers.enumerations_controller
+  /enumerations/edition-design-slots:
+    get:
+      tags:
+      - enumerations
+      summary: Get the list of all dapper edition design slots enumerations
+      description: Get the list of all dapper edition design slots enumerations
+      operationId: list_edition_design_slot_enumerations
+      responses:
+        "200":
+          description: The list of Edition Design Slot Enumerations
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_11'
+        "401":
+          description: Unauthorized
+      security:
+      - Bearer: []
+      - ApiToken: []
+      x-openapi-router-controller: swagger_server.controllers.enumerations_controller
+components:
+  schemas:
+    ApiResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          type: object
+        error:
+          type: string
+    Enumerations: {}
+    EditionTypes:
+      type: object
+      properties:
+        EDITION_TYPES:
+          type: array
+          items:
+            type: string
+    EditionDesignSlot:
+      type: object
+      properties:
+        EDITION_DESIGN_SLOT:
+          type: array
+          items:
+            type: string
+    EditionRarity:
+      type: object
+      properties:
+        EDITION_RARITY:
+          type: array
+          items:
+            type: string
+    SerieStatus:
+      type: string
+      enum:
+      - DRAFT
+      - ACTIVE
+      - INACTIVE
+    BaseSerie:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        short_word:
+          type: string
+        publish_time:
+          type: string
+          format: date-time
+          nullable: true
+    CreateSerie:
+      allOf:
+      - $ref: '#/components/schemas/BaseSerie'
+      - required:
+        - name
+        - short_word
+        type: object
+    UpdateSerie:
+      allOf:
+      - $ref: '#/components/schemas/BaseSerie'
+    Serie:
+      allOf:
+      - $ref: '#/components/schemas/BaseSerie'
+      - type: object
+        properties:
+          id:
+            type: integer
+          status:
+            $ref: '#/components/schemas/SerieStatus'
+          collections:
+            type: array
+            items:
+              $ref: '#/components/schemas/CollectionListable'
+          collections_count:
+            type: integer
+            description: The amount of collections in the Serie (cannot be deleted
+              if this is > 0)
+          has_published_editions:
+            type: boolean
+            description: Whether the Serie has published Editions (short_word cannot
+              be updated if this is true)
+    SerieListable:
+      allOf:
+      - $ref: '#/components/schemas/BaseSerie'
+      - type: object
+        properties:
+          id:
+            type: integer
+          status:
+            $ref: '#/components/schemas/SerieStatus'
+          collections_count:
+            type: integer
+            description: The amount of collections in the Serie (cannot be deleted
+              if this is > 0)
+    ListSeries:
+      type: object
+      properties:
+        series:
+          type: array
+          items:
+            $ref: '#/components/schemas/SerieListable'
+        total_pages:
+          type: integer
+    CollectionOffChainMetadata:
+      type: object
+      properties:
+        description:
+          type: string
+          nullable: true
+    CollectionStatus:
+      type: string
+      enum:
+      - DRAFT
+      - PUBLISHED
+      - INACTIVE
+    BaseCollection:
+      type: object
+      properties:
+        name:
+          type: string
+        off_chain_metadata:
+          $ref: '#/components/schemas/CollectionOffChainMetadata'
+        short_word:
+          type: string
+        publish_time:
+          type: string
+          format: date-time
+          nullable: true
+    CreateCollection:
+      allOf:
+      - $ref: '#/components/schemas/BaseCollection'
+      - required:
+        - name
+        - serie_id
+        - short_word
+        type: object
+        properties:
+          serie_id:
+            type: integer
+    UpdateCollection:
+      allOf:
+      - $ref: '#/components/schemas/BaseCollection'
+      - type: object
+        properties:
+          serie_id:
+            type: integer
+          wearables_count_difference:
+            type: integer
+            description: The amount to increase or decrease the counter (e.g. 1 or
+              -1)
+            nullable: true
+    Collection:
+      allOf:
+      - $ref: '#/components/schemas/BaseCollection'
+      - type: object
+        properties:
+          id:
+            type: integer
+          status:
+            $ref: '#/components/schemas/CollectionStatus'
+          serie:
+            $ref: '#/components/schemas/SerieListable'
+          editions:
+            type: array
+            items:
+              $ref: '#/components/schemas/EditionListable'
+          wearables_count:
+            type: integer
+            description: The amount of wearables in the Collection (cannot be deleted
+              if this is > 0)
+          has_published_editions:
+            type: boolean
+            description: Whether the Collection has published Editions (short_word
+              cannot be updated if this is true)
+    CollectionListable:
+      allOf:
+      - $ref: '#/components/schemas/BaseCollection'
+      - type: object
+        properties:
+          id:
+            type: integer
+          status:
+            $ref: '#/components/schemas/CollectionStatus'
+          serie:
+            $ref: '#/components/schemas/SerieListable'
+          wearables_count:
+            type: integer
+            description: The amount of wearables in the Collection (cannot be deleted
+              if this is > 0)
+    ListCollections:
+      type: object
+      properties:
+        collections:
+          type: array
+          items:
+            $ref: '#/components/schemas/CollectionListable'
+        total_pages:
+          type: integer
+    EditionStatus:
+      type: string
+      enum:
+      - DRAFT
+      - CREATING
+      - CREATED
+      - MINTED
+      - ON_SALE
+      - ERROR
+    EditionOffChainMetadata:
+      type: object
+      properties:
+        description:
+          type: string
+          nullable: true
+    CreateOrUpdateEditionOnChainMetadata:
+      type: object
+      properties:
+        artist:
+          type: string
+          nullable: true
+        celebrity:
+          type: string
+          nullable: true
+        design_slot:
+          type: string
+        publisher:
+          type: string
+          nullable: true
+        rarity:
+          type: string
+        trademark:
+          type: string
+          nullable: true
+        type:
+          type: string
+    EditionOnChainMetadata:
+      type: object
+      properties:
+        artist:
+          type: string
+        avatar_wearable_sku:
+          type: string
+        celebrity:
+          type: string
+        design_slot:
+          type: string
+        publisher:
+          type: string
+        rarity:
+          type: string
+        trademark:
+          type: string
+        type:
+          type: string
+    BaseEdition:
+      type: object
+      properties:
+        name:
+          type: string
+        off_chain_metadata:
+          $ref: '#/components/schemas/EditionOffChainMetadata'
+        publish_time:
+          type: string
+          format: date-time
+          nullable: true
+        avatar_wearable_id:
+          type: integer
+    CreateEdition:
+      allOf:
+      - $ref: '#/components/schemas/BaseEdition'
+      - required:
+        - avatar_wearable_id
+        - name
+        type: object
+        properties:
+          on_chain_metadata:
+            $ref: '#/components/schemas/CreateOrUpdateEditionOnChainMetadata'
+          price:
+            type: number
+            format: double
+          reserve_percentage:
+            type: integer
+    UpdateEdition:
+      allOf:
+      - $ref: '#/components/schemas/BaseEdition'
+      - type: object
+        properties:
+          on_chain_metadata:
+            $ref: '#/components/schemas/CreateOrUpdateEditionOnChainMetadata'
+          price:
+            type: number
+            format: double
+            nullable: true
+          reserve_percentage:
+            type: integer
+            nullable: true
+    BatchUpdateEditions:
+      required:
+      - avatar_wearable_id
+      - collection_id
+      - file_list
+      - short_word
+      type: object
+      properties:
+        avatar_wearable_id:
+          type: integer
+        short_word:
+          type: string
+        collection_id:
+          type: integer
+        file_list:
+          type: array
+          items:
+            type: string
+    Edition:
+      allOf:
+      - $ref: '#/components/schemas/BaseEdition'
+      - type: object
+        properties:
+          id:
+            type: integer
+          on_chain_metadata:
+            $ref: '#/components/schemas/EditionOnChainMetadata'
+          status:
+            $ref: '#/components/schemas/EditionStatus'
+          price:
+            type: string
+          reserve_percentage:
+            type: string
+          collection:
+            $ref: '#/components/schemas/CollectionListable'
+          dropEditions:
+            type: array
+            items:
+              $ref: '#/components/schemas/DropEdition'
+          nfts:
+            type: array
+            items:
+              $ref: '#/components/schemas/Nft'
+          nfts_minted:
+            type: integer
+          nfts_for_sale:
+            type: integer
+    EditionListable:
+      allOf:
+      - $ref: '#/components/schemas/BaseEdition'
+      - type: object
+        properties:
+          id:
+            type: integer
+          on_chain_metadata:
+            $ref: '#/components/schemas/EditionOnChainMetadata'
+          status:
+            $ref: '#/components/schemas/EditionStatus'
+          price:
+            type: string
+          reserve_percentage:
+            type: string
+          nfts_minted:
+            type: integer
+          nfts_for_sale:
+            type: integer
+    ListEditions:
+      type: object
+      properties:
+        editions:
+          type: array
+          items:
+            $ref: '#/components/schemas/EditionListable'
+        total_pages:
+          type: integer
+    EditionError:
+      type: object
+      properties:
+        id:
+          type: integer
+        edition_id:
+          type: integer
+        error_date:
+          type: string
+          format: date-time
+        type:
+          type: string
+        error:
+          type: string
+        suggested_solution:
+          type: string
+    ListEditionErrors:
+      type: object
+      properties:
+        edition_errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/EditionError'
+        total_pages:
+          type: integer
+    Mint:
+      type: object
+      properties:
+        quantity:
+          type: integer
+    DropStatus:
+      type: string
+      enum:
+      - DRAFT
+      - PUBLISHED
+      - ON_SALE
+      - FINISHED
+    BaseDrop:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+        image_url:
+          type: string
+        start_time:
+          type: string
+          format: date-time
+          nullable: true
+        end_time:
+          type: string
+          format: date-time
+          nullable: true
+        publish_time:
+          type: string
+          format: date-time
+          nullable: true
+    CreateDrop:
+      allOf:
+      - $ref: '#/components/schemas/BaseDrop'
+      - required:
+        - title
+        type: object
+        properties:
+          drop_editions:
+            type: array
+            items:
+              $ref: '#/components/schemas/CreateOrUpdateDropEdition'
+    UpdateDrop:
+      allOf:
+      - $ref: '#/components/schemas/BaseDrop'
+      - type: object
+        properties:
+          drop_editions:
+            type: array
+            items:
+              $ref: '#/components/schemas/CreateOrUpdateDropEdition'
+    Drop:
+      allOf:
+      - $ref: '#/components/schemas/BaseDrop'
+      - type: object
+        properties:
+          id:
+            type: integer
+          status:
+            $ref: '#/components/schemas/DropStatus'
+          drop_editions:
+            type: array
+            items:
+              $ref: '#/components/schemas/DropEdition'
+          editions_quantity:
+            type: integer
+    DropListable:
+      allOf:
+      - $ref: '#/components/schemas/BaseDrop'
+      - type: object
+        properties:
+          id:
+            type: integer
+          status:
+            $ref: '#/components/schemas/DropStatus'
+          editions_quantity:
+            type: integer
+    ListDrops:
+      type: object
+      properties:
+        drops:
+          type: array
+          items:
+            $ref: '#/components/schemas/DropListable'
+        total_pages:
+          type: integer
+    CreateOrUpdateDropEdition:
+      required:
+      - edition_id
+      - price
+      type: object
+      properties:
+        edition_id:
+          type: integer
+        price:
+          type: number
+          format: double
+    DropEdition:
+      type: object
+      properties:
+        drop:
+          $ref: '#/components/schemas/DropListable'
+        edition:
+          $ref: '#/components/schemas/EditionListable'
+        price:
+          oneOf:
+          - type: number
+            format: double
+          - type: string
+    NftStatus:
+      type: string
+      enum:
+      - MINTED
+      - GIFTED
+    Nft:
+      type: object
+      properties:
+        id:
+          type: integer
+        serial_number:
+          type: integer
+        reserved:
+          type: boolean
+        status:
+          $ref: '#/components/schemas/NftStatus'
+        avatar_wearable_sku:
+          type: string
+        edition_name:
+          type: string
+    ListNfts:
+      type: object
+      properties:
+        nfts:
+          type: array
+          items:
+            $ref: '#/components/schemas/Nft'
+        total_pages:
+          type: integer
+    AuthResponse:
+      type: object
+      properties:
+        username:
+          type: string
+        token:
+          type: string
+        api_token:
+          type: string
+    Auth:
+      required:
+      - password
+      - username
+      type: object
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+    inline_response_200:
+      allOf:
+      - $ref: '#/components/schemas/ApiResponse'
+      - type: object
+        properties:
+          data:
+            $ref: '#/components/schemas/AuthResponse'
+    inline_response_200_1:
+      allOf:
+      - $ref: '#/components/schemas/ApiResponse'
+      - type: object
+        properties:
+          data:
+            $ref: '#/components/schemas/ListSeries'
+    inline_response_201:
+      allOf:
+      - $ref: '#/components/schemas/ApiResponse'
+      - type: object
+        properties:
+          data:
+            $ref: '#/components/schemas/Serie'
+    inline_response_200_2:
+      allOf:
+      - $ref: '#/components/schemas/ApiResponse'
+      - type: object
+        properties:
+          data:
+            $ref: '#/components/schemas/SuccessResponse'
+    inline_response_200_3:
+      allOf:
+      - $ref: '#/components/schemas/ApiResponse'
+      - type: object
+        properties:
+          data:
+            $ref: '#/components/schemas/ListCollections'
+    inline_response_201_1:
+      allOf:
+      - $ref: '#/components/schemas/ApiResponse'
+      - type: object
+        properties:
+          data:
+            $ref: '#/components/schemas/Collection'
+    inline_response_200_4:
+      allOf:
+      - $ref: '#/components/schemas/ApiResponse'
+      - type: object
+        properties:
+          data:
+            $ref: '#/components/schemas/ListEditions'
+    inline_response_201_2:
+      allOf:
+      - $ref: '#/components/schemas/ApiResponse'
+      - type: object
+        properties:
+          data:
+            $ref: '#/components/schemas/Edition'
+    inline_response_200_5:
+      allOf:
+      - $ref: '#/components/schemas/ApiResponse'
+      - type: object
+        properties:
+          data:
+            $ref: '#/components/schemas/ListEditionErrors'
+    inline_response_200_6:
+      allOf:
+      - $ref: '#/components/schemas/ApiResponse'
+      - type: object
+        properties:
+          data:
+            $ref: '#/components/schemas/ListDrops'
+    inline_response_201_3:
+      allOf:
+      - $ref: '#/components/schemas/ApiResponse'
+      - type: object
+        properties:
+          data:
+            $ref: '#/components/schemas/Drop'
+    inline_response_200_7:
+      allOf:
+      - $ref: '#/components/schemas/ApiResponse'
+      - type: object
+        properties:
+          data:
+            $ref: '#/components/schemas/ListNfts'
+    inline_response_200_8:
+      allOf:
+      - $ref: '#/components/schemas/ApiResponse'
+      - type: object
+        properties:
+          data:
+            $ref: '#/components/schemas/Enumerations'
+    inline_response_200_9:
+      allOf:
+      - $ref: '#/components/schemas/ApiResponse'
+      - type: object
+        properties:
+          data:
+            $ref: '#/components/schemas/EditionRarity'
+    inline_response_200_10:
+      allOf:
+      - $ref: '#/components/schemas/ApiResponse'
+      - type: object
+        properties:
+          data:
+            $ref: '#/components/schemas/EditionTypes'
+    inline_response_200_11:
+      allOf:
+      - $ref: '#/components/schemas/ApiResponse'
+      - type: object
+        properties:
+          data:
+            $ref: '#/components/schemas/EditionDesignSlot'
+  securitySchemes:
+    Bearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      x-bearerInfoFunc: swagger_server.controllers.authorization_controller.check_Bearer
+    ApiToken:
+      type: apiKey
+      name: ApiToken
+      in: header
+      x-apikeyInfoFunc: swagger_server.controllers.authorization_controller.check_ApiToken
+

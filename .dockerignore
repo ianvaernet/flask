@@ -1,3 +1,8 @@
+.travis.yaml
+.swagger-codegen-ignore
+README.md
+git_push.sh
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -62,27 +67,4 @@ target/
 
 #Ipython Notebook
 .ipynb_checkpoints
-
-# neo vim logs
-.nvimlog
-
-# Database folder for docker
-my-db/
-
-# Code generator version number
-.swagger-codegen/
-
-# IDE
-/.idea
-
-.DS_STORE
-
-# Swagger-codegen jar
-swagger-codegen-cli.jar
-swagger-codegen.sh
-
-# Swagger-server .env (linked by docker-compose)
-swagger_server/.env
-
-.dir-locals.el
-swagger-codegen.jar
+./my-db

@@ -1,0 +1,1973 @@
+openapi: "3.0.0"
+info:
+  description: "Genies NFT Administration Subsystem API"
+  version: "1.0.0"
+  title: "Genies NFT Administration"
+  contact:
+    email: "wenceslao@42mate.com"
+  license:
+    name: "Apache 2.0"
+    url: "http://www.apache.org/licenses/LICENSE-2.0.html"
+servers:
+  - url: "https://cms-nft-subsystem/v1"
+  - url: "http://cms-nft-subsystem/v1"
+
+paths:
+  /auth:
+    post:
+      tags:
+      - "authorization"
+      summary: "Authenticate to the genies cms backend"
+      operationId: "authenticate"
+      requestBody:
+        description: "Creadentials"
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Auth"
+      responses:
+        "200":
+          description: "Log in successfully"
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: "object"
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/AuthResponse"
+        "400":
+          description: "Bad Request"
+        "401":
+          description: "Unauthorized"
+  /series:
+    get:
+      tags:
+      - "series"
+      summary: "Get the list of series"
+      description: "Get the list of all series with support for filtering by status and searching by name or short_word"
+      operationId: "listSeries"
+      parameters:
+      - in: "query"
+        name: "status"
+        description: "A comma separated list of status to filter by"
+        required: false
+        explode: false
+        schema:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/SerieStatus"
+      - in: "query"
+        name: "keyword"
+        description: "Search by name or short_word"
+        required: false
+        schema:
+          type: "string"
+      - in: "query"
+        name: "page"
+        required: false
+        schema:
+          type: "integer"
+      - in: "query"
+        name: "page_size"
+        required: false
+        schema:
+          type: "integer"
+      - in: "query"
+        name: "order"
+        required: false
+        schema:
+          type: "string"
+      - in: "query"
+        name: "order_by"
+        required: false
+        schema:
+          type: "string"
+      responses:
+        "200":
+          description: "The list of Series"
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: "object"
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/ListSeries"
+        "401":
+          description: "Unauthorized"
+      security:
+      - Bearer: []
+      - ApiToken: []
+
+    post:
+      tags:
+      - "series"
+      summary: "Create a new series"
+      description: "Create a new draft serie inside the genies cms nft subsystem"
+      operationId: "createSerie"
+      requestBody:
+        description: "The series object to be created"
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSerie"
+      responses:
+        "201":
+          description: "Serie successfully created"
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: "object"
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/Serie"
+        "401":
+          description: "Unauthorized"
+        "409":
+          description: "A Serie with the same name or short_word already exists"
+      security:
+      - Bearer: []
+      - ApiToken: []
+
+  /series/{id}:
+    get:
+      tags:
+      - "series"
+      summary: "Get a serie"
+      description: "Get a serie data based on its ID"
+      operationId: "getSerie"
+      parameters:
+      - in: "path"
+        name: "id"
+        schema:
+          type: "integer"
+        description: "The serie id"
+        required: true
+      - in: "query"
+        name: "format"
+        required: false
+        schema:
+          type: "boolean"
+      responses:
+        "200":
+          description: "The requested Serie"
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: "object"
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/Serie"
+        "401":
+          description: "Unauthorized"
+        "404":
+          description: "Serie not found"
+      security:
+      - Bearer: []
+      - ApiToken: []
+
+    put:
+      tags:
+      - "series"
+      summary: "Update a serie"
+      description: "Update a serie data, if it's a draft all data is updatable, but if it's published only off_chain_metadata can be updated"
+      operationId: "updateSerie"
+      parameters:
+      - in: "path"
+        name: "id"
+        schema:
+          type: "integer"
+        description: "The serie id"
+        required: true
+      requestBody:
+        description: "The serie object to be updated"
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateSerie"
+      responses:
+        "200":
+          description: "Serie successfully updated"
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: "object"
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/Serie"
+        "401":
+          description: "Unauthorized"
+        "404":
+          description: "Serie not found"
+        "409":
+          description: "Another Serie with the same name or short_word already exists"
+      security:
+      - Bearer: []
+      - ApiToken: []
+
+    delete:
+      tags:
+      - "series"
+      summary: "Delete a series"
+      description: "Delete draft series"
+      operationId: "deleteSerie"
+      parameters:
+      - in: "path"
+        name: "id"
+        schema:
+          type: "integer"
+        description: "The serie id"
+        required: true
+      responses:
+        "200":
+          description: "Serie successfully deleted"
+        "401":
+          description: "Unauthorized"
+        "403":
+          description: "The Serie cannot be deleted because it has already been published"
+        "404":
+          description: "Serie not found"
+        "409":
+          description: "The Serie cannot be deleted because it has Collections dependent on it"
+      security:
+      - Bearer: []
+      - ApiToken: []
+
+  /series/{id}/publish:
+    post:
+      tags:
+      - "series"
+      summary: "Publish a serie"
+      description: "Publish a serie"
+      operationId: "publishSerie"
+      parameters:
+      - in: "path"
+        name: "id"
+        schema:
+          type: "integer"
+        description: "The serie id to be published"
+        required: true
+      responses:
+        "200":
+          description: "The serie have been published"
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: "object"
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/SuccessResponse"
+        "401":
+          description: "Unauthorized"
+        "404":
+          description: "Serie not found"
+      security:
+      - Bearer: []
+      - ApiToken: []
+
+
+
+  /collections:
+    get:
+      tags:
+      - "collections"
+      summary: "Get the list of collections"
+      description: "Get the list of all collections with support for filtering by status or serie_id and searching by name or short_word"
+      operationId: "listCollections"
+      parameters:
+      - in: "query"
+        name: "status"
+        description: "A comma separated list of status to filter by"
+        required: false
+        explode: false
+        schema:
+          type: "list"
+          items:
+            $ref: "#/components/schemas/CollectionStatus"
+      - in: "query"
+        name: "serie_id"
+        required: false
+        schema:
+          type: "integer"
+      - in: "query"
+        name: "order"
+        required: false
+        schema:
+          type: "string"
+      - in: "query"
+        name: "order_by"
+        required: false
+        schema:
+          type: "string"
+      - in: "query"
+        name: "keyword"
+        description: "Search by name or short_word"
+        required: false
+        schema:
+          type: "string"
+      - in: "query"
+        name: "page"
+        required: false
+        schema:
+          type: "integer"
+      - in: "query"
+        name: "page_size"
+        required: false
+        schema:
+          type: "integer"
+      responses:
+        "200":
+          description: "The list of Collections"
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: "object"
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/ListCollections"
+        "401":
+          description: "Unauthorized"
+      security:
+      - Bearer: []
+      - ApiToken: []
+
+    post:
+      tags:
+      - "collections"
+      summary: "Create a new collection"
+      description: "Create a new draft collection inside the genies cms nft subsystem"
+      operationId: "createCollection"
+      requestBody:
+        description: "The collection object to be created"
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCollection"
+      responses:
+        "201":
+          description: "Collection successfully created"
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: "object"
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/Collection"
+        "400":
+          description: "Invalid serieId"
+        "401":
+          description: "Unauthorized"
+        "409":
+          description: "A Collection with the same name or short_word already exists"
+      security:
+      - Bearer: []
+      - ApiToken: []
+
+  /collections/{id}:
+    get:
+      tags:
+      - "collections"
+      summary: "Get a collection"
+      description: "Get a collection data based on its ID"
+      operationId: "getCollection"
+      parameters:
+      - in: "path"
+        name: "id"
+        schema:
+          type: "integer"
+        description: "The Collection id"
+        required: true
+      - in: "query"
+        name: "format"
+        required: false
+        schema:
+          type: "boolean"
+      responses:
+        "200":
+          description: "The requested Collection"
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: "object"
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/Collection"
+        "401":
+          description: "Unauthorized"
+        "404":
+          description: "Collection not found"
+      security:
+      - Bearer: []
+      - ApiToken: []
+
+    put:
+      tags:
+      - "collections"
+      summary: "Update a collection"
+      description: "Update a collection data, if it's a draft all data is updatable, but if it's published only off_chain_metadata can be updated"
+      operationId: "updateCollection"
+      parameters:
+      - in: "path"
+        name: "id"
+        schema:
+          type: "integer"
+        description: "The id of the collection to update"
+        required: true
+      requestBody:
+        description: "The collection object to be updated"
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateCollection"
+      responses:
+        "200":
+          description: "Collection successfully updated"
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: "object"
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/Collection"
+        "400":
+          description: "Invalid serieId"
+        "401":
+          description: "Unauthorized"
+        "404":
+          description: "Collection not found"
+        "409":
+          description: "A Collection with the same name or short_word already exists"
+      security:
+      - Bearer: []
+      - ApiToken: []
+
+    delete:
+      tags:
+      - "collections"
+      summary: "Delete a collection"
+      description: "Delete draft collection"
+      operationId: "deleteCollection"
+      parameters:
+      - in: "path"
+        name: "id"
+        description: "The collection id"
+        required: true
+        schema:
+          type: "integer"
+      responses:
+        "200":
+          description: "Collection successfully deleted"
+        "401":
+          description: "Unauthorized"
+        "403":
+          description: "The Collection cannot be deleted because it has already been published"
+        "404":
+          description: "Collection not found"
+        "409":
+          description: "The Collection cannot be deleted because it has Editions dependent on it"
+      security:
+      - Bearer: []
+      - ApiToken: []
+
+  /collections/{id}/publish:
+    post:
+      tags:
+      - "collections"
+      summary: "Publish a collection"
+      description: "Publish a collection"
+      operationId: "publishCollection"
+      parameters:
+      - in: "path"
+        name: "id"
+        schema:
+          type: "integer"
+        description: "The collection id to be published"
+        required: true
+      responses:
+        "200":
+          description: "The collection have been published"
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: "object"
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/SuccessResponse"
+        "401":
+          description: "Unauthorized"
+        "404":
+          description: "No Collection found"
+      security:
+      - Bearer: []
+      - ApiToken: []
+
+
+
+  /editions:
+    get:
+      tags:
+      - "editions"
+      summary: "Get the list of Editions"
+      description: "Get the list of all Editions with support for filtering by status, availability, rarity, type, design_slot, min_price, max_price or avatar_wearable_id and searching by name, artist, celebrity, publisher, trademark or avatar_wearable_sku"
+      operationId: "listEditions"
+      parameters:
+      - in: "query"
+        name: "status"
+        description: "A comma separated list of status to filter by"
+        required: false
+        explode: false
+        schema:
+          type: "list"
+          items:
+            $ref: "#/components/schemas/EditionStatus"
+      - in: "query"
+        name: "available"
+        description: "An edition is available if it’s not related to any drop"
+        required: false
+        schema:
+          type: "boolean"
+      - in: "query"
+        name: "rarity"
+        required: false
+        schema:
+          type: "string"
+      - in: "query"
+        name: "type"
+        required: false
+        schema:
+          type: "string"
+      - in: "query"
+        name: "design_slot"
+        required: false
+        schema:
+          type: "string"
+      - in: "query"
+        name: "min_price"
+        required: false
+        schema:
+          type: "number"
+          format: "double"
+      - in: "query"
+        name: "max_price"
+        required: false
+        schema:
+          type: "number"
+          format: "double"
+      - in: "query"
+        name: "avatar_wearable_id"
+        required: false
+        schema:
+          type: "integer"
+      - in: "query"
+        name: "keyword"
+        description: "Search by name, artist, celebrity, publisher, trademark or avatar_wearable_sku"
+        required: false
+        schema:
+          type: "string"
+      - in: "query"
+        name: "order"
+        required: false
+        schema:
+          type: "string"
+      - in: "query"
+        name: "order_by"
+        required: false
+        schema:
+          type: "string"
+      - in: "query"
+        name: "page"
+        required: false
+        schema:
+          type: "integer"
+      - in: "query"
+        name: "page_size"
+        required: false
+        schema:
+          type: "integer"
+      - in: "query"
+        name: "format"
+        required: false
+        schema:
+          type: "boolean"
+      responses:
+        "200":
+          description: "The list of Editions"
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: "object"
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/ListEditions"
+        "401":
+          description: "Unauthorized"
+      security:
+      - Bearer: []
+      - ApiToken: []
+
+    post:
+      tags:
+      - "editions"
+      summary: "Create a new Edition"
+      description: "Create a new Edition in draft state."
+      operationId: "createEdition"
+      requestBody:
+        description: "Edition object"
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateEdition"
+      responses:
+        "201":
+          description: "Edition succesfully created"
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: "object"
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/Edition"
+        "400":
+          description: "Invalid collectionId"
+        "401":
+          description: "Unauthorized"
+        "409":
+          description: "An Edition with the same name already exists"
+      security:
+      - Bearer: []
+      - ApiToken: []
+
+  /editions/{id}:
+    get:
+      tags:
+      - "editions"
+      summary: "Get the data of an specific edition"
+      description: "Get all the details from an specific edition"
+      operationId: "getEdition"
+      parameters:
+      - in: "path"
+        name: "id"
+        description: "The edition id"
+        schema:
+          type: "integer"
+          format: "int64"
+        required: true
+      - in: "query"
+        name: "format"
+        required: false
+        schema:
+          type: "boolean"
+      responses:
+        "200":
+          description: "The requested Edition"
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: "object"
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/Edition"
+        "401":
+          description: "Unauthorized"
+        "404":
+          description: "Edition Not Found"
+      security:
+      - Bearer: []
+      - ApiToken: []
+
+    put:
+      tags:
+      - "editions"
+      summary: "Update an Edition"
+      description: "Create a new Edition in draft state."
+      operationId: "updateEdition"
+      parameters:
+      - in: "path"
+        name: "id"
+        description: "The edition id"
+        schema:
+          type: "integer"
+          format: "int64"
+        required: true
+      requestBody:
+        description: "Edition object"
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateEdition"
+      responses:
+        "200":
+          description: "Edition successfully updated"
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: "object"
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/Edition"
+        "400":
+          description: "Invalid collection_id"
+        "401":
+          description: "Unauthorized"
+        "404":
+          description: "Edition not found"
+        "409":
+          description: "An Edition with the same name already exists"
+      security:
+      - Bearer: []
+      - ApiToken: []
+
+    delete:
+      tags:
+      - "editions"
+      summary: "Delete an Edition"
+      description: "Delete draft Edition"
+      operationId: "deleteEdition"
+      parameters:
+      - in: "path"
+        name: "id"
+        description: "The edition id"
+        schema:
+          type: "integer"
+        required: true
+      responses:
+        "200":
+          description: "Edition successfully deleted"
+        "401":
+          description: "Unauthorized"
+        "403":
+          description: "The Edition cannot be deleted because it has already been published"
+        "404":
+          description: "Edition not found"
+      security:
+      - Bearer: []
+      - ApiToken: []
+
+  /editions/batch_update:
+    put:
+      tags:
+      - "editions"
+      summary: "Update Editions by avatar_wearable_id"
+      description: "Update the collection_id and asset short_word of all the Editions with that avatar_wearable_id."
+      operationId: "batchUpdateEditions"
+      requestBody:
+        description: "avatar_wearable_id and updated fields (collection_id and short_word)"
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BatchUpdateEditions"
+      responses:
+        "200":
+          description: "Editions successfully updated"
+        "401":
+          description: "Unauthorized"
+        "403":
+          description: "There are Editions with that avatar_wearable_id that have already been published"
+        "404":
+          description: "There is no Collection with that collection_id"
+      security:
+      - Bearer: []
+      - ApiToken: []
+
+  /editions/{id}/publish:
+    post:
+      tags:
+      - "editions"
+      summary: "Publish an edition to the Dapper system"
+      description: "Publish an edition to the Dapper system, this will block the on chain metadata."
+      operationId: "publishEdition"
+      parameters:
+      - in: "path"
+        name: "id"
+        description: "The edition id to be published"
+        schema:
+          type: "integer"
+        required: true
+      responses:
+        "200":
+          description: "Nft published"
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: "object"
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/SuccessResponse"
+        "400":
+          description: "Bad Request"
+        "401":
+          description: "Unauthorized"
+      security:
+      - Bearer: []
+      - ApiToken: []
+
+  /editions/{id}/mint:
+    post:
+      tags:
+      - "editions"
+      summary: "Mint an NFT"
+      description: "Mint an specific amount of one edition based on it's id"
+      operationId: "mintNft"
+      parameters:
+      - in: "path"
+        name: "id"
+        description: "The edition id"
+        schema:
+          type: "integer"
+          format: "int64"
+        required: true
+      requestBody:
+        description: "The quantity of edition structures to be minted"
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Mint"
+      responses:
+        "200":
+          description: "Minted NFT"
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: "object"
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/SuccessResponse"
+        "400":
+          description: "Bad Request"
+        "401":
+          description: "Unauthorized"
+      security:
+      - Bearer: []
+      - ApiToken: []
+
+  /editions/{id}/errors:
+    get:
+      tags:
+      - "editions"
+      summary: "List the errors of an specific edition"
+      description: "List all the errors of an specific edition"
+      operationId: "listEditionErrors"
+      parameters:
+      - in: "path"
+        name: "id"
+        description: "The edition id"
+        schema:
+          type: "integer"
+          format: "int64"
+        required: true
+      - in: "query"
+        name: "page"
+        required: false
+        schema:
+          type: "integer"
+      - in: "query"
+        name: "page_size"
+        required: false
+        schema:
+          type: "integer"
+      responses:
+        "200":
+          description: "The requested Edition's errors"
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: "object"
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/ListEditionErrors"
+        "401":
+          description: "Unauthorized"
+        "404":
+          description: "Edition Not Found"
+      security:
+      - Bearer: []
+      - ApiToken: []
+
+
+
+  /drops:
+    get:
+      tags:
+      - "drops"
+      summary: "Get the list of drops"
+      description: "Get the list of all drops with support for filtering by status and searching by title"
+      operationId: "listDrops"
+      parameters:
+      - in: "query"
+        name: "status"
+        description: "A comma separated list of status to filter by"
+        required: false
+        explode: false
+        schema:
+          type: "list"
+          items:
+            $ref: "#/components/schemas/DropStatus"
+      - in: "query"
+        name: "keyword"
+        description: "Search by title"
+        required: false
+        schema:
+          type: "string"
+      - in: "query"
+        name: "order"
+        required: false
+        schema:
+          type: "string"
+      - in: "query"
+        name: "order_by"
+        required: false
+        schema:
+          type: "string"
+      - in: "query"
+        name: "page"
+        required: false
+        schema:
+          type: "integer"
+      - in: "query"
+        name: "page_size"
+        required: false
+        schema:
+          type: "integer"
+      responses:
+        "200":
+          description: "The list of drops"
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: "object"
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/ListDrops"
+        "401":
+          description: "Unauthorized"
+      security:
+      - Bearer: []
+      - ApiToken: []
+
+    post:
+      tags:
+      - "drops"
+      summary: "Create a new drop"
+      description: "Create a new draft drop inside the genies cms nft subsystem"
+      operationId: "createDrop"
+      requestBody:
+        description: "The drop object to be created"
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateDrop"
+      responses:
+        "201":
+          description: "The drop has been created"
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: "object"
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/Drop"
+      security:
+      - Bearer: []
+      - ApiToken: []
+
+  /drops/{id}:
+    get:
+      tags:
+      - "drops"
+      summary: "Get a drop"
+      description: "Get a drop data based on its ID"
+      operationId: "getDrop"
+      parameters:
+      - in: "path"
+        name: "id"
+        schema:
+          type: "integer"
+        description: "The drop id"
+        required: true
+      - in: "query"
+        name: "format"
+        required: false
+        schema:
+          type: "boolean"
+      responses:
+        "200":
+          description: "The drop Object"
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: "object"
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/Drop"
+        "401":
+          description: "Unauthorized"
+        "404":
+          description: "Drop not found"
+      security:
+      - Bearer: []
+      - ApiToken: []
+
+    put:
+      tags:
+      - "drops"
+      summary: "Update a drop"
+      description: "Update a drop data, if it's a draft all data is updatable"
+      operationId: "updateDrop"
+      parameters:
+      - in: "path"
+        name: "id"
+        schema:
+          type: "integer"
+        description: "The drop id"
+        required: true
+      requestBody:
+        description: "The drop object to be updated"
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateDrop"
+      responses:
+        "200":
+          description: "The Drop has been updated"
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: "object"
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/Drop"
+        "400":
+          description: "Bad Request"
+        "401":
+          description: "Unauthorized"
+        "403":
+          description: "Drop already on sale or finished"
+        "404":
+          description: "Drop or Edition not found"
+      security:
+      - Bearer: []
+      - ApiToken: []
+
+    delete:
+      tags:
+      - "drops"
+      summary: "Delete a drop"
+      description: "Delete draft drop"
+      operationId: "deleteDrop"
+      parameters:
+      - in: "path"
+        name: "id"
+        schema:
+          type: "integer"
+        description: "The drop id"
+        required: true
+      responses:
+        "200":
+          description: "The Drop has been deleted"
+        "401":
+          description: "Unauthorized"
+        "403":
+          description: "Drop already published"
+        "404":
+          description: "Drop not found"
+      security:
+      - Bearer: []
+      - ApiToken: []
+
+  /drops/{id}/publish:
+    post:
+      tags:
+      - "drops"
+      summary: "Publish a drop"
+      description: "Publish a drop"
+      operationId: "publishDrop"
+      parameters:
+      - in: "path"
+        name: "id"
+        schema:
+          type: "integer"
+        description: "The drop id to be published"
+        required: true
+      responses:
+        "200":
+          description: "The drop has been published"
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: "object"
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/SuccessResponse"
+        "401":
+          description: "Unauthorized"
+        "404":
+          description: "No Drop found"
+      security:
+      - Bearer: []
+      - ApiToken: []
+
+
+
+  /nfts:
+    get:
+      tags:
+      - "nfts"
+      summary: "Get the list of Nfts"
+      description: "Get the list of all Nfts with support for filtering by reservation, status, rarity, serie_id or collection_id and searching by serial_number, Edition's name, Collection's name or short_word, Serie's name or short_word"
+      operationId: "listNfts"
+      parameters:
+      - in: "query"
+        name: "reserved"
+        required: false
+        schema:
+          type: "boolean"
+      - in: "query"
+        name: "status"
+        description: "A comma separated list of status to filter by"
+        required: false
+        explode: false
+        schema:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/NftStatus"
+      - in: "query"
+        name: "rarity"
+        required: false
+        schema:
+          type: "string"
+      - in: "query"
+        name: "serie_id"
+        required: false
+        schema:
+          type: "integer"
+      - in: "query"
+        name: "collection_id"
+        required: false
+        schema:
+          type: "integer"
+      - in: "query"
+        name: "keyword"
+        description: "Search by serial_number, Edition's name, Collection's name and short_word, and Serie's name and short_word"
+        required: false
+        schema:
+          type: "string"
+      - in: "query"
+        name: "page"
+        required: false
+        schema:
+          type: "integer"
+      - in: "query"
+        name: "page_size"
+        required: false
+        schema:
+          type: "integer"
+      responses:
+        "200":
+          description: "The list of Nfts"
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: "object"
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/ListNfts"
+        "401":
+          description: "Unauthorized"
+      security:
+      - Bearer: []
+      - ApiToken: []
+
+  /enumerations:
+    get:
+      tags:
+      - "enumerations"
+      summary: "Get the list of all dapper enumerations"
+      description: "Get the list of all dapper enumerations"
+      operationId: "listEnumerations"
+      parameters:
+      responses:
+        "200":
+          description: "The list of Enumerations"
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: "object"
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/Enumerations"
+        "401":
+          description: "Unauthorized"
+      security:
+      - Bearer: []
+      - ApiToken: []
+
+  /enumerations/edition-rarity:
+    get:
+      tags:
+      - "enumerations"
+      summary: "Get the list of all dapper edition rarity enumerations"
+      description: "Get the list of all dapper edition rarity enumerations"
+      operationId: "listEditionRarityEnumerations"
+      parameters:
+      responses:
+        "200":
+          description: "The list of Edition Rarity Enumerations"
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: "object"
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/EditionRarity"
+        "401":
+          description: "Unauthorized"
+      security:
+      - Bearer: []
+      - ApiToken: []
+
+  /enumerations/edition-types:
+    get:
+      tags:
+      - "enumerations"
+      summary: "Get the list of all dapper edition types enumerations"
+      description: "Get the list of all dapper edition types enumerations"
+      operationId: "listEditionTypeEnumerations"
+      parameters:
+      responses:
+        "200":
+          description: "The list of Edition Types Enumerations"
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: "object"
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/EditionTypes"
+        "401":
+          description: "Unauthorized"
+      security:
+      - Bearer: []
+      - ApiToken: []
+
+  /enumerations/edition-design-slots:
+    get:
+      tags:
+      - "enumerations"
+      summary: "Get the list of all dapper edition design slots enumerations"
+      description: "Get the list of all dapper edition design slots enumerations"
+      operationId: "listEditionDesignSlotEnumerations"
+      parameters:
+      responses:
+        "200":
+          description: "The list of Edition Design Slot Enumerations"
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: "object"
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/EditionDesignSlot"
+        "401":
+          description: "Unauthorized"
+      security:
+      - Bearer: []
+      - ApiToken: []
+
+components:
+  securitySchemes:
+    Bearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    ApiToken:
+      type: apiKey
+      in: header
+      name: ApiToken
+
+  schemas:
+    ApiResponse:
+      type: "object"
+      properties:
+        code:
+          type: "integer"
+          format: "int32"
+        message:
+          type: "string"
+        data:
+          type: "object"
+        error:
+          type: "string"
+
+    Enumerations:
+      allOF:
+        - $ref: "#/components/schemas/EditionTypes"
+        - $ref: "#/components/schemas/EditionDesignSlot"
+        - $ref: "#/components/schemas/EditionRarity"
+
+    EditionTypes:
+      type: "object"
+      properties:
+        EDITION_TYPES:
+          type: "array"
+          items:
+            type: "string"
+
+    EditionDesignSlot:
+      type: "object"
+      properties:
+        EDITION_DESIGN_SLOT:
+          type: "array"
+          items:
+            type: "string"
+
+    EditionRarity:
+      type: "object"
+      properties:
+        EDITION_RARITY:
+          type: "array"
+          items:
+            type: "string"
+
+    SerieStatus:
+      type: "string"
+      enum:
+      - "DRAFT"
+      - "ACTIVE"
+      - "INACTIVE"
+
+    BaseSerie:
+      type: "object"
+      properties:
+        name:
+          type: "string"
+        description:
+          type: "string"
+          nullable: true
+        short_word:
+          type: "string"
+        publish_time:
+          type: "string"
+          format: "date-time"
+          nullable: true
+
+    CreateSerie:
+      allOf:
+        - $ref: "#/components/schemas/BaseSerie"
+        - type: "object"
+          required:
+            - name
+            - short_word
+
+    UpdateSerie:
+      allOf:
+        - $ref: "#/components/schemas/BaseSerie"
+
+    Serie:
+      allOf:
+        - $ref: "#/components/schemas/BaseSerie"
+        - type: "object"
+          properties:
+            id:
+              type: "integer"
+            status:
+              $ref: "#/components/schemas/SerieStatus"
+            collections:
+              type: "array"
+              items:
+                $ref: "#/components/schemas/CollectionListable"
+            collections_count:
+              type: "integer"
+              description: "The amount of collections in the Serie (cannot be deleted if this is > 0)"
+            has_published_editions:
+              type: "boolean"
+              description: "Whether the Serie has published Editions (short_word cannot be updated if this is true)"
+
+    SerieListable:
+      allOf:
+        - $ref: "#/components/schemas/BaseSerie"
+        - type: "object"
+          properties:
+            id:
+              type: "integer"
+            status:
+              $ref: "#/components/schemas/SerieStatus"
+            collections_count:
+              type: "integer"
+              description: "The amount of collections in the Serie (cannot be deleted if this is > 0)"
+
+    ListSeries:
+      type: "object"
+      properties:
+        series:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/SerieListable"
+        total_pages:
+          type: "integer"
+
+
+
+    CollectionOffChainMetadata:
+      type: "object"
+      properties:
+        description:
+          type: "string"
+          nullable: true
+
+    CollectionStatus:
+      type: "string"
+      enum:
+      - "DRAFT"
+      - "PUBLISHED"
+      - "INACTIVE"
+
+    BaseCollection:
+      type: "object"
+      properties:
+        name:
+          type: "string"
+        off_chain_metadata:
+          $ref: "#/components/schemas/CollectionOffChainMetadata"
+        short_word:
+          type: "string"
+        publish_time:
+          type: "string"
+          format: "date-time"
+          nullable: true
+
+    CreateCollection:
+      allOf:
+        - $ref: "#/components/schemas/BaseCollection"
+        - type: "object"
+          required:
+            - name
+            - short_word
+            - serie_id
+          properties:
+            serie_id:
+              type: "integer"
+
+    UpdateCollection:
+      allOf:
+        - $ref: "#/components/schemas/BaseCollection"
+        - type: "object"
+          properties:
+            serie_id:
+              type: "integer"
+            wearables_count_difference:
+              type: "integer"
+              description: "The amount to increase or decrease the counter (e.g. 1 or -1)"
+              nullable: true
+
+    Collection:
+      allOf:
+        - $ref: "#/components/schemas/BaseCollection"
+        - type: "object"
+          properties:
+            id:
+              type: "integer"
+            status:
+              $ref: "#/components/schemas/CollectionStatus"
+            serie:
+              $ref: "#/components/schemas/SerieListable"
+            editions:
+              type: "array"
+              items:
+                $ref: "#/components/schemas/EditionListable"
+            wearables_count:
+              type: "integer"
+              description: "The amount of wearables in the Collection (cannot be deleted if this is > 0)"
+            has_published_editions:
+              type: "boolean"
+              description: "Whether the Collection has published Editions (short_word cannot be updated if this is true)"
+
+    CollectionListable:
+      allOf:
+        - $ref: "#/components/schemas/BaseCollection"
+        - type: "object"
+          properties:
+            id:
+              type: "integer"
+            status:
+              $ref: "#/components/schemas/CollectionStatus"
+            serie:
+              $ref: "#/components/schemas/SerieListable"
+            wearables_count:
+              type: "integer"
+              description: "The amount of wearables in the Collection (cannot be deleted if this is > 0)"
+
+    ListCollections:
+      type: "object"
+      properties:
+        collections:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/CollectionListable"
+        total_pages:
+          type: "integer"
+
+    EditionStatus:
+      type: "string"
+      enum:
+      - "DRAFT"
+      - "CREATING"
+      - "CREATED"
+      - "MINTED"
+      - "ON_SALE"
+      - "ERROR"
+
+    EditionOffChainMetadata:
+      type: "object"
+      properties: 
+        description:
+          type: "string"
+          nullable: true
+
+    CreateOrUpdateEditionOnChainMetadata:
+      type: "object"
+      properties:
+        artist:
+          type: "string"
+          nullable: true
+        celebrity:
+          type: "string"
+          nullable: true
+        design_slot:
+          type: "string"
+        publisher:
+          type: "string"
+          nullable: true
+        rarity:
+          type: "string"
+        trademark:
+          type: "string"
+          nullable: true
+        type:
+          type: "string"
+
+    EditionOnChainMetadata:
+      type: "object"
+      properties:
+        artist:
+          type: "string"
+        avatar_wearable_sku:
+          type: "string"
+        celebrity:
+          type: "string"
+        design_slot:
+          type: "string"
+        publisher:
+          type: "string"
+        rarity:
+          type: "string"
+        trademark:
+          type: "string"
+        type:
+          type: "string"
+
+    BaseEdition:
+      type: "object"
+      properties:
+        name:
+          type: "string"
+        off_chain_metadata:
+          $ref: "#/components/schemas/EditionOffChainMetadata"
+        publish_time:
+          type: "string"
+          format: "date-time"
+          nullable: true
+        avatar_wearable_id:
+          type: "integer"
+
+    CreateEdition:
+      allOf:
+        - $ref: "#/components/schemas/BaseEdition"
+        - type: "object"
+          required:
+            - name
+            - avatar_wearable_id
+          properties:
+            on_chain_metadata:
+              $ref: "#/components/schemas/CreateOrUpdateEditionOnChainMetadata"
+            price:
+              type: "number"
+              format: "double"
+            reserve_percentage:
+              type: "integer"
+
+    UpdateEdition:
+      allOf:
+        - $ref: "#/components/schemas/BaseEdition"
+        - type: "object"
+          properties:
+            on_chain_metadata:
+              $ref: "#/components/schemas/CreateOrUpdateEditionOnChainMetadata"
+            price:
+              type: "number"
+              format: "double"
+              nullable: true
+            reserve_percentage:
+              type: "integer"
+              nullable: true
+
+    BatchUpdateEditions:
+      type: "object"
+      properties:
+        avatar_wearable_id:
+          type: "integer"
+        short_word:
+          type: "string"
+        collection_id:
+          type: "integer"
+        file_list:
+          type: "array"
+          items:
+            type: "string"
+      required:
+        - avatar_wearable_id
+        - short_word
+        - collection_id
+        - file_list
+
+    Edition:
+      allOf:
+        - $ref: "#/components/schemas/BaseEdition"
+        - type: "object"
+          properties:
+            id:
+              type: "integer"
+            on_chain_metadata:
+              $ref: "#/components/schemas/EditionOnChainMetadata"
+            status:
+              $ref: "#/components/schemas/EditionStatus"
+            price:
+              type: "string"
+            reserve_percentage:
+              type: "string"
+            collection:
+              $ref: "#/components/schemas/CollectionListable"
+            dropEditions:
+              type: "array"
+              items:
+                $ref: "#/components/schemas/DropEdition"
+            nfts:
+              type: "array"
+              items:
+                $ref: "#/components/schemas/Nft"
+            nfts_minted:
+              type: "integer"
+            nfts_for_sale:
+              type: "integer"
+
+    EditionListable:
+      allOf:
+        - $ref: "#/components/schemas/BaseEdition"
+        - type: "object"
+          properties:
+            id:
+              type: "integer"
+            on_chain_metadata:
+              $ref: "#/components/schemas/EditionOnChainMetadata"
+            status:
+              $ref: "#/components/schemas/EditionStatus"
+            price:
+              type: "string"
+            reserve_percentage:
+              type: "string"
+            nfts_minted:
+              type: "integer"
+            nfts_for_sale:
+              type: "integer"
+
+    ListEditions:
+      type: "object"
+      properties:
+        editions:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/EditionListable"
+        total_pages:
+          type: "integer"
+
+    EditionError:
+      type: "object"
+      properties:
+        id: 
+          type: "integer"
+        edition_id: 
+          type: "integer"
+        error_date:
+          type: "string"
+          format: "date-time"
+        type:
+          type: "string"
+        error:
+          type: "string"
+        suggested_solution:
+          type: "string"
+
+    ListEditionErrors:
+      type: "object"
+      properties:
+        edition_errors:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/EditionError"
+        total_pages:
+          type: "integer"
+
+    Mint:
+      type: "object"
+      properties:
+        quantity:
+          type: "integer"
+
+
+    DropStatus:
+      type: "string"
+      enum:
+      - "DRAFT"
+      - "PUBLISHED"
+      - "ON_SALE"
+      - "FINISHED"
+
+    BaseDrop:
+      type: "object"
+      properties:
+        title:
+          type: "string"
+        description:
+          type: "string"
+          nullable: true
+        image_url:
+          type: "string"
+        start_time:
+          type: "string"
+          format: "date-time"
+          nullable: true
+        end_time:
+          type: "string"
+          format: "date-time"
+          nullable: true
+        publish_time:
+          type: "string"
+          format: "date-time"
+          nullable: true
+
+    CreateDrop:
+      allOf:
+        - $ref: "#/components/schemas/BaseDrop"
+        - type: "object"
+          required:
+            - title
+          properties:
+            drop_editions:
+              type: "array"
+              items:
+                $ref: "#/components/schemas/CreateOrUpdateDropEdition"
+
+    UpdateDrop:
+      allOf:
+        - $ref: "#/components/schemas/BaseDrop"
+        - type: "object"
+          properties:
+            drop_editions:
+              type: "array"
+              items:
+                $ref: "#/components/schemas/CreateOrUpdateDropEdition"
+
+    Drop:
+      allOf:
+        - $ref: "#/components/schemas/BaseDrop"
+        - type: "object"
+          properties:
+            id:
+              type: "integer"
+            status:
+              $ref: "#/components/schemas/DropStatus"
+            drop_editions:
+              type: "array"
+              items:
+                $ref: "#/components/schemas/DropEdition"
+            editions_quantity:
+              type: "integer"
+
+    DropListable:
+      allOf:
+        - $ref: "#/components/schemas/BaseDrop"
+        - type: "object"
+          properties:
+            id:
+              type: "integer"
+            status:
+              $ref: "#/components/schemas/DropStatus"
+            editions_quantity:
+              type: "integer"
+
+    ListDrops:
+      type: "object"
+      properties:
+        drops:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/DropListable"
+        total_pages:
+          type: "integer"
+
+    CreateOrUpdateDropEdition:
+      type: "object"
+      required:
+        - edition_id
+        - price
+      properties:
+        edition_id:
+          type: "integer"
+        price:
+          type: "number"
+          format: "double"
+
+    DropEdition:
+      type: "object"
+      properties:
+        drop:
+          $ref: "#/components/schemas/DropListable"
+        edition:
+          $ref: "#/components/schemas/EditionListable"
+        price:
+          oneOf:
+            - type: "number"
+              format: "double"
+            - type: "string"
+
+
+
+    NftStatus:
+      type: "string"
+      enum:
+        - "MINTED"
+        - "GIFTED"
+
+    Nft:
+      type: "object"
+      properties:
+        id:
+          type: "integer"
+        serial_number:
+          type: "integer"
+        reserved:
+          type: "boolean"
+        status:
+          $ref: "#/components/schemas/NftStatus"
+        avatar_wearable_sku:
+          type: "string"
+        edition_name:
+          type: "string"
+
+    ListNfts:
+      type: "object"
+      properties:
+        nfts:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/Nft"
+        total_pages:
+          type: "integer"
+
+
+
+    AuthResponse:
+      type: "object"
+      properties:
+        username:
+          type: "string"
+        token:
+          type: "string"
+        api_token:
+          type: "string"
+
+    Auth:
+      type: "object"
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: "string"
+        password:
+          type: "string"
+
+    SuccessResponse:
+      type: "object"
+      properties:
+        success:
+          type: "boolean"
+
+externalDocs:
+  description: "Find out more about Swagger"
+  url: "http://swagger.io"
